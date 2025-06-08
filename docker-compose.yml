@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: mumbai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_DSN: root:password@tcp(db:3306)/mumbai?parseTime=true
+      HTTP_PORT: 8080
+      GRPC_PORT: 50051
+      ENV: production
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
